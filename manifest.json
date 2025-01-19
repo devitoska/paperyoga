@@ -1,0 +1,34 @@
+{
+  "manifest_version": 2,
+  "name": "PaperYoga",
+  "version": "1.0",
+  "description": "Quack quack",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "paperyoga@lezdu.it"
+    }
+  },
+  "icons": {
+    "48": "icons/icon.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://scholar.google.com/scholar?*"],
+      "js": ["js/libraries/jquery_min.js","js/libraries/html2canvas_min.js", 
+             "js/utils.js", "js/scholar.js", "js/scimago.js", "js/view.js", "js/content.js"],
+      "css" : ["css/content.css"]
+    }
+  ],
+  "background": {
+    "scripts": ["js/background.js"]
+  },
+  
+  "permissions": [
+    "https://www.scimagojr.com/*",
+    "storage"
+  ],
+
+  "web_accessible_resources": ["img/*", "icons/*", "html/*"]
+
+}
