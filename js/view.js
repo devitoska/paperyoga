@@ -1,3 +1,4 @@
+// display paperyoga popup
 async function displayPopup(){
     // add loader phrases
     let loaderSentences = getLoaderSentences();
@@ -29,6 +30,7 @@ async function displayPopup(){
     return interval;
 }
 
+// update popup with info after retrieving it
 function updatePopup(info){
     $.get(browser.runtime.getURL("html/popup_body.html"), (html) => {
         console.log(info);

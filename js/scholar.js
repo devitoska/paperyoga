@@ -1,3 +1,5 @@
+// get metadata from Google Scholar search results using the cite link that reveals a popup
+// uses the MLA citation format to extract metadata
 async function scholarSearch(elem){
 
     let title = elem.find("h3>a").first().text().replace(/(\[.*\])/, "").trim();
@@ -12,6 +14,9 @@ async function scholarSearch(elem){
     citUrl = "https://scholar.google.com/scholar?q=info:" + 
                 data_cid + ":scholar.google.com/&output=cite&scirp=0&hl=en";
     
+    ////////////////////////////////////////////
+    // TODO: change from MLA to BibTex (metadata already extracted) or improve MLA parsing
+    ////////////////////////////////////////////
     await $.ajax({
         url: citUrl,
         type: "GET",

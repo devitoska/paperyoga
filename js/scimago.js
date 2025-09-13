@@ -1,3 +1,4 @@
+// extracts information on categories from Scimago
 function extractCategoryTree(html){
     let tree = {};
     let children = $(html).find(">li");
@@ -12,6 +13,7 @@ function extractCategoryTree(html){
     return tree;
 }
 
+// extracts quartile information from Scimago
 function extractQuartile(html, year = undefined){
 
     function transformQuartile(x){
@@ -49,6 +51,7 @@ function extractQuartile(html, year = undefined){
     return q_list.reduce(getQuartiles, {});
 }
 
+// exttracts information from first Scimago result page ( TODO: however, false positives are possible )
 async function journalSearch(html, year, journal){
     // select first link in search results
     let ret = {"title" : journal, "scimagoUrl" : undefined};
@@ -91,6 +94,7 @@ async function journalSearch(html, year, journal){
     return ret;
 }
 
+// search on Scimago based on journal and publisher (TODO: do first a search on journal only, then on journal + publisher)
 async function scimagoSearch(journal, publisher, year){
     
     baseUrl = "https://www.scimagojr.com/journalsearch.php?q=";

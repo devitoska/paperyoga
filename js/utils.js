@@ -1,9 +1,11 @@
+// sanitizes a search string by replacing dots with spaces, removing non-alphanumeric characters (except for spaces and hyphens), and replacing spaces with plus signs
 function sanitizeSearchString(string){
     if (string == undefined)
         return undefined;
     return string.replace(/\./," ").replace(/[^a-zA-Z0-9 \-]/g, "").replace(/ /g, '+');
 }
 
+// checks if a string is a valid URL
 function isValidUrl(string){
     let urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
         '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
@@ -14,14 +16,17 @@ function isValidUrl(string){
       return !!urlPattern.test(string);
 }
 
+// returns the UUID of the extension
 function getUUID(){
     return browser.runtime.getURL('/');
 }
 
+// capitalizes the first letter of a string
 function capitalize(string){
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+// try-catch wrapper
 function tc(fun, defaultVal = undefined){
     try{
         return fun();
@@ -32,6 +37,7 @@ function tc(fun, defaultVal = undefined){
     }
 }
 
+// return shuffled array of sentences for the loader
 function getLoaderSentences(){
     let sentences = [
         "Staring blankly at editor's comments ...",
