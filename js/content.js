@@ -1,23 +1,28 @@
 function setButtons (){
+    // get all search result elements
     elems = $("#gs_res_ccl_mid>.gs_r.gs_or.gs_scl[data-cid]");
     keys = Object.keys(elems);
     keys.pop();
     keys.pop();
     elems = keys.map((key) => elems[key]);
 
+    // retrieve info and display popup
     function retrieveData(elem, idx){
         return async function(){
             interval = displayPopup();
-            let info = await scholarSearch($(elem));
-            info["id"] = idx;
-            let journalInfo = await scimagoSearch(info.journal, info.publisher, info.year);
-            info["journalInfo"] = journalInfo;
+            let info = await scholarSearch(idx, $(elem));
+            
+            // if it's an article, we can try to get journal info from scimago
+            if (info.type == "article" && info.journal !== undefined)
+                info["journalInfo"] = await scimagoSearch(info.journal, info.year);
+                
             clearInterval(interval);
             updatePopup(info);
             // popup or something else here
         }
     }
 
+    // add button to each element
     elems.forEach( (elem, idx) => {
         // add button if not already present
         if ($(elem).find("img.detail-link").length > 0)

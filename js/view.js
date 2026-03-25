@@ -1,4 +1,4 @@
-// display paperyoga popup
+// display popup
 async function displayPopup(){
     // add loader phrases
     let loaderSentences = getLoaderSentences();
@@ -35,7 +35,7 @@ function updatePopup(info){
     $.get(browser.runtime.getURL("html/popup_body.html"), (html) => {
         console.log(info);
         let popupBody = $(html);
-        fields = ['title', 'authors', 'publisher', 'year', 'citations'];
+        fields = ['title', 'authors', 'publisher', 'year', 'journal', 'conference'];
         
         fields.forEach((field) => {
             if(info[field])
@@ -44,15 +44,10 @@ function updatePopup(info){
                 );
         });
 
-        // add link to the paper
-
-        popupBody.find("#title_div").append(
-            `<a href="${info.link}"><img class = "link_icon" src = "${browser.runtime.getURL("icons/link.png")}"></a>`
-        );
-
         // add journal info
         
         if (info.journalInfo){
+            /*
             journalFields = ['title', 'hIndex', 'country', 'coverage', 'issn'];
             journalFields.forEach((field) => {
                 if(info.journalInfo[field])
@@ -60,6 +55,7 @@ function updatePopup(info){
                         `<b>Journal ${field}</b>: ${info.journalInfo[field]}`
                     );
             });
+            */
 
             // view more on scimago
             if (info.journalInfo["scimagoUrl"])
@@ -70,7 +66,8 @@ function updatePopup(info){
                 popupBody.find("#view_more_div").html(
                     `Journal not found on Scimago`
                 );
-
+            
+            /*
             // quartiles
             let quartiles = info.journalInfo['quartiles'];
             let quartilesThatYear = info.journalInfo['quartilesThatYear'];
@@ -98,16 +95,10 @@ function updatePopup(info){
                     quartileDiv.append(span);
                 }
             }
-
+            */
         }
         
         $(".popup_body").html($(popupBody));
 
-        /*
-        // downloadable img for citation in slides
-        html2canvas( document.querySelector(".downloadable_img"), {allowTaint:true,useCORS:true}).then( canvas => {
-            //document.querySelector(".downloadable_img").innerHTML = "";
-            document.body.appendChild(canvas);
-        });*/
     });
 }

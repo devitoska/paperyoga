@@ -51,68 +51,72 @@ function extractQuartile(html, year = undefined){
     return q_list.reduce(getQuartiles, {});
 }
 
-// exttracts information from first Scimago result page ( TODO: however, false positives are possible )
+// extracts information from first Scimago result page ( TODO: however, false positives are possible )
 async function journalSearch(html, year, journal){
-    // select first link in search results
-    let ret = {"title" : journal, "scimagoUrl" : undefined};
-    // now we consider only the first result on Scimago
-    let queryStringJournal = tc( () => $(html).find(".search_results>a").first().attr("href").split("q=")[1]);
     
-    if (queryStringJournal !== undefined){
-        let journalUrl = baseUrl + queryStringJournal;
-        //console.log("journalUrl = " + journalUrl);
+    let ret = {"title" : journal, "scimagoUrl" : undefined};
+    let baseUrl = "https://www.scimagojr.com/";
+    let elems = tc( () => $(html).find(".search_results>a"));
+
+    // for each elem
+
+    for (let i = 0; i < elems.length; i++){
+        let elem = elems[i];
+        let scimagoJournal = tc( () => $(elem).find("jrnlname").text() );
+
+        if (scimagoJournal.toLowerCase() == journal.toLowerCase()){
+            let queryStringJournal = tc( () => $(elem).attr("href").split("q=")[1]);
+            let journalUrl = baseUrl + queryStringJournal;
+            ret["scimagoUrl"] = journalUrl;
+            break;
+        }
+        /*
+        let queryStringJournal = tc( () => $(html).find(".search_results>a").first().attr("href").split("q=")[1]);
         
-        // get journal info
-        await $.ajax({
-            url: journalUrl,
-            type: "GET",
-            dataType: "html",
-            success:  (html) => {
-                let journalInfo = {};
-                // get title from html
-                journalInfo["scimagoUrl"] = journalUrl;
-                journalInfo["title"] = tc( () => $(html).filter("title").text() );
-                journalGrid = tc( ()  => $(html).find(".journalgrid").children() );
-                journalInfo["country"] = tc( () => $(journalGrid["0"].innerHTML).find("a").first().text());
-                categoryTreeHTML = $(journalGrid["1"].outerHTML).find("ul").first()["0"].outerHTML;
-                journalInfo["categoryTree"] = tc( () => extractCategoryTree(categoryTreeHTML)); 
-                journalInfo["publisher"] = tc( () => $(journalGrid["2"].innerHTML).find("a").first().text());
-                journalInfo["hIndex"] = tc( () => parseInt($(journalGrid["3"].outerHTML).find(".hindexnumber").text()) );
-                journalInfo["publicationType"] = tc( () => $(journalGrid["4"].outerHTML).find("p").first().text() );
-                journalInfo["issn"] = tc( () => $(journalGrid["5"].outerHTML).find("p").first().text() );
-                journalInfo["coverage"] = tc( () => $(journalGrid["6"].outerHTML).find("p").first().text() );
-                journalInfo["quartiles"] = tc( () => extractQuartile(html) );
-                journalInfo["quartilesThatYear"] = tc( () => extractQuartile(html, year) );
-                //console.log(journalInfo);
-                ret = journalInfo;
-            },
-            error: function(e){
-                console.log("error in second Scimago search" + e);
-            }, 
-        });
+        if (queryStringJournal !== undefined){
+            let journalUrl = baseUrl + queryStringJournal;
+            //console.log("journalUrl = " + journalUrl);
+            
+            // get journal info
+            await $.ajax({
+                url: journalUrl,
+                type: "GET",
+                dataType: "html",
+                success:  (html) => {
+                    let journalInfo = {};
+                    // get title from html
+                    journalInfo["scimagoUrl"] = journalUrl;
+                    journalInfo["title"] = tc( () => $(html).filter("title").text() );
+                    journalGrid = tc( ()  => $(html).find(".journalgrid").children() );
+                    journalInfo["country"] = tc( () => $(journalGrid["0"].innerHTML).find("a").first().text());
+                    categoryTreeHTML = $(journalGrid["1"].outerHTML).find("ul").first()["0"].outerHTML;
+                    journalInfo["categoryTree"] = tc( () => extractCategoryTree(categoryTreeHTML)); 
+                    journalInfo["publisher"] = tc( () => $(journalGrid["2"].innerHTML).find("a").first().text());
+                    journalInfo["hIndex"] = tc( () => parseInt($(journalGrid["3"].outerHTML).find(".hindexnumber").text()) );
+                    journalInfo["publicationType"] = tc( () => $(journalGrid["4"].outerHTML).find("p").first().text() );
+                    journalInfo["issn"] = tc( () => $(journalGrid["5"].outerHTML).find("p").first().text() );
+                    journalInfo["coverage"] = tc( () => $(journalGrid["6"].outerHTML).find("p").first().text() );
+                    journalInfo["quartiles"] = tc( () => extractQuartile(html) );
+                    journalInfo["quartilesThatYear"] = tc( () => extractQuartile(html, year) );
+                    //console.log(journalInfo);
+                    ret = journalInfo;
+                },
+                error: function(e){
+                    console.log("error in second Scimago search" + e);
+                }, 
+            });
+        }
+            */
     }
+
     return ret;
 }
 
 // search on Scimago based on journal and publisher (TODO: do first a search on journal only, then on journal + publisher)
-async function scimagoSearch(journal, publisher, year){
+async function scimagoSearch(journal, year){
     
     baseUrl = "https://www.scimagojr.com/journalsearch.php?q=";
-    
-    //the search is based on journal + publisher, if publisher is not an url
-    //only journal, otherwise
-    queryString = sanitizeSearchString(journal);
-
-    if (queryString == "" || queryString == undefined)
-        return undefined;
-
-    publisher = publisher.trim();
-    
-    if (!(publisher == "" || publisher == undefined) && !isValidUrl(publisher)){
-        publisher = sanitizeSearchString(publisher);
-        queryString += "+" + sanitizeSearchString(publisher);
-    }
-
+    queryString = sanitizeSearchString(journal).trim();
     url = baseUrl + queryString;
     console.log("url = " + url);
 
@@ -122,11 +126,15 @@ async function scimagoSearch(journal, publisher, year){
         url: url,
         type: "GET",
         dataType: "html",
+        beforeSend: function(request) {
+            request.setRequestHeader("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36");
+        },
         success:  (html) => {
             ret = journalSearch(html, year, journal);
         },
         error: function(e){
-            console.log("error in first Scimago search" + e);
+            console.log(e)
+            console.log("error in first Scimago search");
         }, 
     });
 

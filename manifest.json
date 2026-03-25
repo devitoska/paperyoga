@@ -15,7 +15,7 @@
   "content_scripts": [
     {
       "matches": ["*://scholar.google.com/scholar?*"],
-      "js": ["js/libraries/jquery_min.js","js/libraries/html2canvas_min.js", 
+      "js": ["js/libraries/jquery_min.js",
              "js/utils.js", "js/scholar.js", "js/scimago.js", "js/view.js", "js/content.js"],
       "css" : ["css/content.css"]
     }
@@ -25,6 +25,7 @@
   },
   
   "permissions": [
+    "https://scholar.googleusercontent.com/*",
     "https://www.scimagojr.com/*",
     "storage"
   ],
