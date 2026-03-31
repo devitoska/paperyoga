@@ -33,71 +33,63 @@ async function displayPopup(){
 // update popup with info after retrieving it
 function updatePopup(info){
     $.get(browser.runtime.getURL("html/popup_body.html"), (html) => {
-        console.log(info);
         let popupBody = $(html);
-        fields = ['title', 'authors', 'publisher', 'year', 'journal', 'conference'];
-        
-        fields.forEach((field) => {
-            if(info[field])
-                popupBody.find(`#${field}_div`).html(
-                    `<b>${capitalize(field)}</b>: ${info[field]}`
-                );
-        });
 
-        // add journal info
-        
-        if (info.journalInfo){
-            /*
-            journalFields = ['title', 'hIndex', 'country', 'coverage', 'issn'];
-            journalFields.forEach((field) => {
-                if(info.journalInfo[field])
-                    popupBody.find(`#journal_${field}_div`).html(
-                        `<b>Journal ${field}</b>: ${info.journalInfo[field]}`
-                    );
-            });
-            */
+        if(info["error"]){
+            popupBody.find("#error_text").html(info["error"]);
+        }
 
-            // view more on scimago
-            if (info.journalInfo["scimagoUrl"])
-                popupBody.find("#view_more_div").html(
-                    `<a href = '${info.journalInfo["scimagoUrl"]}' target="_blank">View more about this journal on Scimago</a>`
-                );
-            else
-                popupBody.find("#view_more_div").html(
-                    `Journal not found on Scimago`
-                );
-            
-            /*
-            // quartiles
-            let quartiles = info.journalInfo['quartiles'];
-            let quartilesThatYear = info.journalInfo['quartilesThatYear'];
+        if (info["warning"]){
+            popupBody.find("#warning_text").html(info["warning"]);
+        }
 
-            if(quartiles){
-                    let quartileDiv = popupBody.find("#journal_quartiles_div");
-                    quartileDiv.html("<b>Journal quartiles</b>: ");
-                    for (let [subject, value] of Object.entries(quartiles)){
-                        let quartile = value['quartile'];
-                        let year = value['year'];
-                        let span = $(`<div><span class='quartile ${quartile}'>${quartile}</span> (${year}) in ${subject}</div>`);
-                        quartileDiv.append(span);
-                    }
-            }
+        if (info["type"] && info["title"]){
+            popupBody.find("#title_div").html(
+                `<b>${capitalize(info["type"]) + ":"}</b> ${info["title"]}`
+            );
+        }
 
-            // quartiles in publication year
-
-            if(quartilesThatYear){
-                let quartileDiv = popupBody.find("#journal_quartilesThatYear_div");
-                quartileDiv.html("<b>Journal quartiles in publication year</b>: ");
-                for (let [subject, value] of Object.entries(quartilesThatYear)){
-                    let quartile = value['quartile'];
-                    let year = value['year'];
-                    let span = $(`<div><span class='quartile ${quartile}'>${quartile}</span> (${year}) in ${subject}</div>`);
-                    quartileDiv.append(span);
-                }
-            }
-            */
+        if (info["publisher"]){
+            popupBody.find("#publisher_div").html(
+                `<b>Publisher:</b> ${capitalize(info["publisher"])}`
+            );
         }
         
+        // populate citescore year info
+        if(info["citescoreYear"]){
+            content = `<br> <b>Citescore Publication Year</b> (${info["citescoreYear"]["year"]}) : ${info["citescoreYear"]["citeScore"]}`;
+            for (let i=0; i < info["citescoreYear"]["details"].length; i++) {
+                item = info["citescoreYear"]["details"][i];
+                quartile = percentileToQuartile(item["percentile"]);
+                if (info["type"] === "journal")
+                    content += `<br> #${item["rank"]} in ${item["subject"]} <span class="quartile ${quartile}">${quartile}</span> (${item["percentile"]} percentile)`;
+                else
+                    content += `<br> #${item["rank"]} in ${item["subject"]} (${item["percentile"]} percentile)`;
+            }
+            popupBody.find("#citescore_year_div").html(content);
+        }
+
+        // populate citescore info now
+        if(info["citescoreNow"]){
+            content = `<br> <b>Citescore Latest</b> (${info["citescoreNow"]["year"]}) : ${info["citescoreNow"]["citeScore"]}`;
+            for (let i=0; i < info["citescoreNow"]["details"].length; i++) {
+                item = info["citescoreNow"]["details"][i];
+                quartile = percentileToQuartile(item["percentile"]);
+                if (info["type"] === "journal")
+                    content += `<br> #${item["rank"]} in ${item["subject"]} <span class="quartile ${quartile}">${quartile}</span> (${item["percentile"]} percentile)`;
+                else
+                    content += `<br> #${item["rank"]} in ${item["subject"]} (${item["percentile"]} percentile)`;
+            }
+
+            popupBody.find("#citescore_now_div").html(content);
+        }
+
+        if(info["scopusLink"]){
+            popupBody.find("#view_more_div").html(
+                `<a href="${info["scopusLink"]}" target="_blank">View more on Scopus</a>`
+            );
+        }
+       
         $(".popup_body").html($(popupBody));
 
     });

@@ -10,14 +10,11 @@ function setButtons (){
     function retrieveData(elem, idx){
         return async function(){
             interval = displayPopup();
-            let info = await scholarSearch(idx, $(elem));
-            
-            // if it's an article, we can try to get journal info from scimago
-            if (info.type == "article" && info.journal !== undefined)
-                info["journalInfo"] = await scimagoSearch(info.journal, info.year);
-                
+            let scholarInfo = await scholarSearch(idx, $(elem));
+            // search journal/conference on scopus
+            let scopusInfo = await scopusSearch(scholarInfo.serialTitle, scholarInfo.year);           
             clearInterval(interval);
-            updatePopup(info);
+            updatePopup(scopusInfo);
             // popup or something else here
         }
     }

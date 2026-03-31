@@ -193,15 +193,20 @@
     margin-left: 2px;
 }
 
-#view_more_div{
-    color: #666;
+#error_div{
+    color: red;
     margin-top: 10px;
     text-align: center;
 }
 
-.downloadable_img{
-    width: 400px;
-    height: 100px;
+#warning_div{
+    color: orange;
+    margin-top: 10px;
     text-align: center;
-    background-image: linear-gradient(140deg, #3a9c50 0%, #006b18 100%);
+}
+
+#view_more_div{
+    color: #666;
+    margin-top: 10px;
+    text-align: center;
 }

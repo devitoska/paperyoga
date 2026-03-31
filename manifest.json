@@ -3,6 +3,10 @@
   "name": "PaperYoga",
   "version": "1.0",
   "description": "Quack quack",
+  "browser_action": {
+    "default_title": "PaperYoga",
+    "default_popup": "menu/menu.html"
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "paper@yo.ga"
@@ -16,20 +20,21 @@
     {
       "matches": ["*://scholar.google.com/scholar?*"],
       "js": ["js/libraries/jquery_min.js",
-             "js/utils.js", "js/scholar.js", "js/scimago.js", "js/view.js", "js/content.js"],
+             "js/utils.js", "js/scholar.js", "js/scopus.js", "js/view.js", "js/content.js"],
       "css" : ["css/content.css"]
     }
   ],
   "background": {
     "scripts": ["js/background.js"]
   },
-  
+
   "permissions": [
-    "https://scholar.googleusercontent.com/*",
-    "https://www.scimagojr.com/*",
-    "storage"
+    "https://api.elsevier.com/*",
+    "storage",
+    "scripting",
+    "activeTab"
   ],
 
-  "web_accessible_resources": ["img/*", "icons/*", "html/*"]
+  "web_accessible_resources": ["img/*", "icons/*", "html/*", "css/*", "js/*", "menu/*"]
 
 }

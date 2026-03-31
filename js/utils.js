@@ -1,8 +1,76 @@
-// sanitizes a search string by replacing dots with spaces, removing non-alphanumeric characters (except for spaces and hyphens), and replacing spaces with plus signs
-function sanitizeSearchString(string){
-    if (string == undefined)
-        return undefined;
-    return string.replace(/\./," ").replace(/[^a-zA-Z0-9 \-]/g, "").replace(/ /g, '+');
+async function getApiKey() {
+  try {
+    const result = await browser.storage.local.get("scopusApiKey");
+    
+    // Check if the key exists in the returned object
+    if (result.scopusApiKey) {
+      return result.scopusApiKey;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error accessing storage:", error);
+    return null;
+  }
+}
+
+function sanitizeTitle(title) {
+    if (typeof title !== "string") return "";
+
+    return title
+        // remove parentheses and their contents
+        .replace(/\([^)]*\)/g, "")
+        // remove ordinal numbers (1st, 2nd, 3rd, 4th, etc.)
+        .replace(/\b\d+(st|nd|rd|th)\b/gi, "")
+        // remove remaining numbers
+        .replace(/\d+/g, "")
+        // remove non-alphanumeric characters except spaces
+        .replace(/[^a-zA-Z\s]/g, "")
+        // collapse multiple spaces into one
+        .replace(/\s+/g, " ")
+        // trim leading/trailing whitespace
+        .trim();
+}
+
+function percentileToQuartile(percentile) {
+    if (percentile >= 75) {
+        return "Q1";
+    } else if (percentile >= 50) {
+        return "Q2";
+    } else if (percentile >= 25) {
+        return "Q3";
+    } else {
+        return "Q4";
+    }
+}
+
+// Extract journal/conference title and publication year from an MLA citation.
+// Handles optional HTML tags and both comma-based and parenthesized year patterns.
+function extractMLAInfo(htmlCitation) {
+    // 1. Remove HTML tags (e.g., <i>, <b>, <span>)
+    // This regex looks for anything between < and > and replaces it with an empty string.
+    const cleanCitation = htmlCitation.replace(/<[^>]*>/g, '');
+
+    // 2. Define the extraction regex
+    // Looks for: "Article Title" [Journal/Conference Name] (Year)
+    const mlaRegex = /"[^"]+"\s*(.*?)[.,\s\(]+(\d{4})(?!\d)/;
+    const match = cleanCitation.match(mlaRegex);
+
+    if (match) {
+        let containerSegment = match[1].trim();
+        // 3. Post-processing to remove Publisher/Metadata
+        // We split by the first period or comma and take the first part.
+        const serialTitle = containerSegment.split(/[.,]/)[0].trim();
+        return {
+            serialTitle: serialTitle,
+            year: match[2]
+        };
+    }
+
+    return {
+        serialTitle: "",
+        year: ""
+    };
 }
 
 // checks if a string is a valid URL
@@ -24,17 +92,6 @@ function getUUID(){
 // capitalizes the first letter of a string
 function capitalize(string){
     return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-// try-catch wrapper
-function tc(fun, defaultVal = undefined){
-    try{
-        return fun();
-    }
-    catch(e){
-        console.log("error in tc\nlog:" + e);
-        return defaultVal;
-    }
 }
 
 // return shuffled array of sentences for the loader
