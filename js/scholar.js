@@ -18,10 +18,10 @@ async function scholarSearch(id, elem) {
         const MLACitation = $(html)
             .find("td>div.gs_citr")
             .first()
-            .text();
+            .html();
 
         let ret = extractMLAInfo(MLACitation);
-        info.serialTitle = sanitizeTitle(ret.serialTitle);
+        info.serialTitle = ret.serialTitle;
         info.year = ret.year;
         return info;
 

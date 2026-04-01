@@ -16,46 +16,25 @@ function getCitescoreInfo(citescoreInfo, codeToSubject) {
     return retObj;
 }
 
-function levenshteinDistance(a, b) {
-  const m = a.length;
-  const n = b.length;
-
-  // Create a 2D array (matrix)
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1));
-
-  // Initialize base cases
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  // Fill the matrix
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,     // deletion
-        dp[i][j - 1] + 1,     // insertion
-        dp[i - 1][j - 1] + cost // substitution
-      );
-    }
-  }
-
-  return dp[m][n];
-}
-
 async function scopusSearch(serialTitle, year) {
+
+    // sanitize serialTitle
+    serialTitle = sanitizeTitle(serialTitle);
+    let title_acronym = extractAcronym(serialTitle);
+    serialTitle = title_acronym.title;
+
     const apiKey = await getApiKey();
     let retObj = {};
     
     if (!apiKey) {
-        console.warn("API key not set for scopusSearch");
-        retObj["error"] = "API key not set";
+        // console.warn("API key not set for scopusSearch");
+        retObj["error"] = "Scopus API: API key not set";
         return retObj;
     }
 
     if (!serialTitle || !year) {
-        console.warn("Missing parameters for scopusSearch:", {serialTitle, year});
-        retObj["error"] = "Missing information";
+        // console.warn("Missing parameters for scopusSearch:", {serialTitle, year});
+        retObj["error"] = "Scopus API: Missing information";
         return retObj;
     }
 
@@ -83,7 +62,7 @@ async function scopusSearch(serialTitle, year) {
        // get error if it exists in response["serial-metadata-response"]["error"]
 
         if (response["serial-metadata-response"]["error"]) {
-            retObj["error"] = response["serial-metadata-response"]["error"] + ", Search title: " + serialTitle;
+            retObj["error"] = "Scopus API: " + response["serial-metadata-response"]["error"] + " (Search title: '" + serialTitle + "')";
         }
         else{
             let minDistance = Infinity;
@@ -101,13 +80,18 @@ async function scopusSearch(serialTitle, year) {
             }
             
             if (minDistance > 0) {
-               retObj["warning"] = "Search results may be inaccurate, Search title: " + serialTitle;
+               retObj["warning"] = "Scopus results may be inaccurate (Search title: '" + serialTitle + "')";
             }
 
             let entry = response["serial-metadata-response"]["entry"][minDistanceIdx];
             retObj["title"] = entry["dc:title"];
             retObj["publisher"] = entry["dc:publisher"];
             retObj["type"] = entry["prism:aggregationType"];
+
+            // if type is conferenceproceeding, change to conference for better display
+            if (retObj["type"] == "conferenceproceeding")
+                retObj["type"] = "conference";
+
             retObj["issn"] = entry["prism:issn"];
             //retObj["SNIP"] = entry["SNIPList"]["SNIP"][0]["$"];
             //retObj["SJR"] = entry["SJRList"]["SJR"][0]["$"];
@@ -119,12 +103,37 @@ async function scopusSearch(serialTitle, year) {
 
             if (entry["citeScoreYearInfoList"]) {
                 let citescoreList = entry["citeScoreYearInfoList"]["citeScoreYearInfo"];
-                retObj["citescoreNow"] = getCitescoreInfo(citescoreList[0], codeToSubject);
-                
-                for (let i = 1; i < citescoreList.length; i++) {
+                let citescoreNow = getCitescoreInfo(citescoreList[0], codeToSubject);
+                let citescoreYear = null;
+
+                for (let i = 0; i < citescoreList.length; i++) {
                     if (citescoreList[i]["@year"] == year) {
-                        retObj["citescoreYear"] = getCitescoreInfo(citescoreList[i], codeToSubject);
+                        citescoreYear = getCitescoreInfo(citescoreList[i], codeToSubject);
                         break;
+                    }
+                }
+                
+                retObj["citescore"] = {}
+                retObj["NowYear"] = citescoreNow["year"];
+                retObj["PublicationYear"] = year;
+
+                for (let i=0; i < citescoreNow["details"].length; i++) {
+                    let item = citescoreNow["details"][i];
+                    retObj["citescore"][item["subject"]] = {
+                        "now" : {
+                            "rank": item["rank"],
+                            "quartile": percentileToQuartile(item["percentile"])
+                        }
+                    };
+                }
+
+                if (citescoreYear) {
+                    for (let i=0; i < citescoreYear["details"].length; i++) {
+                        let item = citescoreYear["details"][i];
+                        retObj["citescore"][item["subject"]]["year"] = {
+                            "rank": item["rank"],
+                            "quartile": percentileToQuartile(item["percentile"])
+                        };
                     }
                 }
 
@@ -142,9 +151,9 @@ async function scopusSearch(serialTitle, year) {
     
     } catch (e) {
         console.error("scopusSearch error:", e);
-        retObj["error"] = "Error retrieving data from Scopus API";
+        retObj["error"] = "Scopus API: Error retrieving data";
         if (e.responseText) {
-            retObj["error"] += ": " + e.responseText;
+            retObj["error"] += " (" + e.responseText + ")";
         }
         return retObj;
     }

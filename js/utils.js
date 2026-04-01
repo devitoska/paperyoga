@@ -14,22 +14,88 @@ async function getApiKey() {
   }
 }
 
+function levenshteinDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+
+  // Create a 2D array (matrix)
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1));
+
+  // Initialize base cases
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  // Fill the matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,     // deletion
+        dp[i][j - 1] + 1,     // insertion
+        dp[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+
+  return dp[m][n];
+}
+
 function sanitizeTitle(title) {
     if (typeof title !== "string") return "";
 
     return title
-        // remove parentheses and their contents
-        .replace(/\([^)]*\)/g, "")
+        // remove 'Proceedings of the'
+        .replace(/Proceedings of the/gi, "")
+        // replace &amp; with "and"
+        .replace(/&amp;/g, "and")
+        // remove html special characters
+        .replace(/&[^;]+;/g, "")
         // remove ordinal numbers (1st, 2nd, 3rd, 4th, etc.)
         .replace(/\b\d+(st|nd|rd|th)\b/gi, "")
         // remove remaining numbers
         .replace(/\d+/g, "")
-        // remove non-alphanumeric characters except spaces
-        .replace(/[^a-zA-Z\s]/g, "")
+        //remove non alphanumeric characters except ' and spaces
+        .replace(/[^a-zA-Z0-9\s']/g, "")
         // collapse multiple spaces into one
         .replace(/\s+/g, " ")
         // trim leading/trailing whitespace
         .trim();
+}
+
+function extractAcronym(title) {
+
+    // extract acronym from serial title if it exists, by taking capital letters
+    let acronymMatch = title.match(/\b[A-Z]{2,}\b/g);
+    
+    // Filter out forbidden acronyms
+    if (acronymMatch) {
+        // add other false positive acronyms to this list if needed
+        falsePositiveAcronyms = ["IEEE", "ACM"];
+        acronymMatch = acronymMatch.filter(word => !falsePositiveAcronyms.includes(word));
+    }
+
+    let acronym = null;
+
+    // Only define acronym if matches exist and are all identical
+    if (acronymMatch && acronymMatch.length > 0) {
+        const firstMatch = acronymMatch[0];
+        const allMatchesEqual = acronymMatch.every(match => match === firstMatch);
+        
+        if (allMatchesEqual) {
+            acronym = firstMatch;
+        }
+    }
+
+    // remove all occurrences of acronym from serial title for better search results
+    // if (acronym) {
+    //   title = title.replace(new RegExp(`\\b${acronym}\\b`, 'g'), "").trim();
+    // }
+
+    // remove parentheses and their contents for better search results
+    title = title.replace(/\([^)]*\)/g, "").trim();
+
+    return {title: title, acronym: acronym };
 }
 
 function percentileToQuartile(percentile) {
@@ -44,29 +110,23 @@ function percentileToQuartile(percentile) {
     }
 }
 
-// Extract journal/conference title and publication year from an MLA citation.
-// Handles optional HTML tags and both comma-based and parenthesized year patterns.
 function extractMLAInfo(htmlCitation) {
-    // 1. Remove HTML tags (e.g., <i>, <b>, <span>)
-    // This regex looks for anything between < and > and replaces it with an empty string.
-    const cleanCitation = htmlCitation.replace(/<[^>]*>/g, '');
-
-    // 2. Define the extraction regex
-    // Looks for: "Article Title" [Journal/Conference Name] (Year)
-    const mlaRegex = /"[^"]+"\s*(.*?)[.,\s\(]+(\d{4})(?!\d)/;
-    const match = cleanCitation.match(mlaRegex);
+    // 1. Define the regex:
+    // <i>(.*?)<\/i>  -> Captures everything inside the italics (the serialTitle)
+    // .*?             -> Matches any characters in between lazily
+    // (\d{4})         -> Captures the first occurrence of exactly 4 digits (the year)
+    const mlaRegex = /<i>(.*?)<\/i>.*?(\d{4})/;
+    
+    const match = htmlCitation.match(mlaRegex);
 
     if (match) {
-        let containerSegment = match[1].trim();
-        // 3. Post-processing to remove Publisher/Metadata
-        // We split by the first period or comma and take the first part.
-        const serialTitle = containerSegment.split(/[.,]/)[0].trim();
         return {
-            serialTitle: serialTitle,
-            year: match[2]
+            serialTitle: match[1].trim(),
+            year: match[2].trim()
         };
     }
 
+    // Default return if no match is found
     return {
         serialTitle: "",
         year: ""

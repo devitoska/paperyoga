@@ -12,9 +12,13 @@ function setButtons (){
             interval = displayPopup();
             let scholarInfo = await scholarSearch(idx, $(elem));
             // search journal/conference on scopus
-            let scopusInfo = await scopusSearch(scholarInfo.serialTitle, scholarInfo.year);           
+            let scopusInfo = await scopusSearch(scholarInfo.serialTitle, scholarInfo.year);      
+            let icoreInfo = {};
+            if ( (!scopusInfo.error && scopusInfo.type == "conference") || scopusInfo.error) {
+                icoreInfo = await icoreSearch(scholarInfo.serialTitle);
+            }    
             clearInterval(interval);
-            updatePopup(scopusInfo);
+            updatePopup(scholarInfo.serialTitle, scopusInfo, icoreInfo);
             // popup or something else here
         }
     }

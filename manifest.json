@@ -20,7 +20,8 @@
     {
       "matches": ["*://scholar.google.com/scholar?*"],
       "js": ["js/libraries/jquery_min.js",
-             "js/utils.js", "js/scholar.js", "js/scopus.js", "js/view.js", "js/content.js"],
+             "js/utils.js", "js/scholar.js", 
+             "js/icore.js", "js/scopus.js", "js/view.js", "js/content.js"],
       "css" : ["css/content.css"]
     }
   ],
@@ -29,6 +30,7 @@
   },
 
   "permissions": [
+    "https://portal.core.edu.au/*",
     "https://api.elsevier.com/*",
     "storage",
     "scripting",
